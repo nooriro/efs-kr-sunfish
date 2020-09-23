@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- Policy for LGU+
+$Header: //commercial/MPSS.TH.2.0.c1.9/Main/modem_proc/mmcp/policyman/configurations/Carrier/OpenMarket/7+5_mode/LGU/carrier_policy.xml#1 $
+-->
+<policy name        = "generic"
+        changelist  = "$Change: 20170111 $"
+        schema_ver  = "1"
+        policy_ver  = "450.1.21"
+>
+
+  <initial>
+    <actions>
+
+      <!-- Define the Home MCCs -->
+      <mcc_list name="home_mccs"> 450 </mcc_list>
+
+      <!-- List of US MCCs and Canada MCCs, where LTE BAND 40 and 41 should be automatically removed -->
+      <mcc_list name="na_mccs"> 302 310 311 312 313 314 315 316 330 </mcc_list>
+
+      <!-- Define  RF band list which excluse LTE Band 40 41-->
+      <rf_band_list name="no_b40_b41">
+        <gw_bands base="hardware" />
+        <lte_bands base="hardware">
+          <exclude> 39 </exclude>
+        </lte_bands>
+        <tds_bands base="hardware" />
+      </rf_band_list>
+
+      <define_fullrat_config>
+        <actions>   
+          <rf_bands />
+          <rat_capability base="none">
+            <include> LTE </include>
+          </rat_capability>
+          <rat_order> L </rat_order>
+          <svc_mode> LIMITED </svc_mode>
+       </actions>
+      </define_fullrat_config>
+
+      <!-- Home RF Band list --> 
+      <rf_band_list name="rf_bands_home">
+        <!-- LTE Band: 1, 5, 7
+        -->
+        <lte_bands base="none" >
+          <include> 0 4 6 </include>
+        </lte_bands>
+        <tds_bands base="none" />
+      </rf_band_list>
+	  
+      <!-- Set initial power up capability -->
+      <rat_capability_if base="none">
+        <include> LTE </include>
+      </rat_capability_if>
+      <rf_bands_if list="rf_bands_home" />
+
+      <feature single_sim="normal"> dualmmode </feature>
+
+      <ue_mode> NORMAL </ue_mode>
+      <freq_list_if list="cpfl" />
+
+      <ca_band_combos string="" />
+
+    </actions>
+  </initial>
+
+  <!-- RULE #1 -->
+  <!-- Wait until location is known.
+  -->
+  <if precond="none">
+    <cond>
+      <phone_operating_mode> ONLINE </phone_operating_mode>
+      <have_location />
+    </cond>
+    <then>
+      <svc_mode> FULL </svc_mode>
+      <continue />
+    </then>
+    <else />
+  </if>
+
+  <!-- RULE #2 -->
+  <!-- In korea we get WL, otherwise GWL.
+  -->
+  <if>
+    <cond> <location_mcc_in list="home_mccs" /> </cond>
+    <then>
+      <rat_capability base="none">
+        <include> LTE </include>
+      </rat_capability>
+      <rf_bands list="rf_bands_home" />
+    </then>
+    <else>
+      <rat_capability base="none">
+        <include> GSM WCDMA LTE </include>
+      </rat_capability>
+      <rf_bands />
+    </else>
+  </if>
+
+  <!-- RULE #3 -->
+
+  <if>
+    <cond> <location_mcc_in list="na_mccs" /> </cond>
+    <then>
+      <rf_bands list="no_b40_b41" />
+    </then>
+    <else>
+      <rf_bands base="hardware" />
+    </else>
+  </if>
+
+</policy>
